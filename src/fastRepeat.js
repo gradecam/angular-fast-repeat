@@ -1,48 +1,4 @@
 /* globals angular */
-
-/**
- * @ngdoc module
- * @name gc.fastRepeat
- * @requires jQuery
- */
-
-/**
- * @ngdoc directive
- * @name fastRepeat
- *
- * @description
- * For the most part, this should be a drop-in replacement for ng-repeat. It does its magic by only
- * rendering the repeat template once and reusing it for each row. This of course means that the row
- * loses any of its dynamic properties. Those are mostly regained with a little bit more magic:
- * whenever a static row is clicked, we compile a new version of the template for that row and
- * recreate the click.
- *
- * Once a row has been clicked and recompiled in this fashion, it becomes a fully dynamic row as if
- * it had been created by ng-repeat. In the event that every row has been clicked, the performance
- * and behavior is much the same as ng-repeat.
- *
- * In all cases, initial list rendering is markedly faster than vanilla ng-repeat. To see just how
- * much faster, run the unit tests!
- *
- * Limitations:
- * - Rows are not dynamic until clicked.
- * - Row updates are only triggered by changes to the row, not external objects. Thus, logic such
- *   as ng-class="{multi: list.selectedCount > 0}" will not update during normal digest cycles
- *   unless the row has been clicked and thus made dynamic.
- * - *Requires jQuery* to be included on the page in order to utilize event delegation with a
- *   single click listener instead of one for each row.
- * - Objects are compared using JSON.stringify rather than Angular's shallow or deep watches.
- *   JSON.stringify is *much* faster on large objects than a deep watch, but does not test for
- *   object identity -- two different objects that stringify identically will not look like a
- *   change.
- *
- * @example
- * ```html
-     <div fast-repeat="book in books">
-         {{book.title}} (<span ng-click="byAuthor(book.author)">{{book.author}}</span>)
-     </div>
- * ```
- */
 angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse', function ($compile, $parse) {
     'use strict';
 
