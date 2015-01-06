@@ -1,0 +1,33 @@
+{
+  "name": "angular-fast-repeat",
+  "version": "0.0.0",
+  "description": "Fast ng-repeat replacement",
+  "main": "fastrepeat.js",
+  "authors": [
+    "Rob Porter <rob@gradecam.com>",
+    "Ben Loveridge <benl@gradecam.com>",
+    "Richard Bateman <rbateman@gradecam.com>"
+  ],
+  "keywords": [
+    "fast-repeat",
+    "ng-repeat",
+    "angular"
+  ],
+  "homepage": "https://github.com/gradecam/angular-fast-repeat",
+  "bugs": {
+    "url": "https://github.com/gradecam/angular-fast-repeat/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/gradecam/angular-fast-repeat.git"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-karma": "^0.9.0",
+    "jasmine-core": "^2.1.3",
+    "karma": "^0.12.31",
+    "karma-jasmine": "^0.3.4",
+    "karma-phantomjs-launcher": "^0.1.4"
+  }
+}
