@@ -5,7 +5,7 @@ module.exports = function(config) {
     config.set({
 
         // base path, that will be used to resolve files and exclude
-        basePath: '',
+        basePath: '..',
 
         // testing framework to use (jasmine/mocha/qunit/...)
         frameworks: ['jasmine'],
@@ -14,8 +14,8 @@ module.exports = function(config) {
             'bower_components/jquery/dist/jquery.js',
             'bower_components/angular/angular.js',
             'bower_components/angular-mocks/angular-mocks.js',
-            'fastRepeat.js',
-            '**/*.spec.js',
+            'src/**/*.js',
+            'test/**/*.spec.js',
         ],
 
         // list of files to exclude
