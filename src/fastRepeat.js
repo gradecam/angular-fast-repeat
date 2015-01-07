@@ -26,12 +26,14 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
             return function link(listScope, element, attrs, ctrl, transclude) {
                 var repeatParts = attrs.fastRepeat.split(' in ');
                 var repeatListName = repeatParts[1], repeatVarName = repeatParts[0];
+                var getter = $parse(repeatListName); // getter(scope) should be the value of the list.
                 var currentRowEls = {};
                 var t;
 
                 // Scope created for evaluating the rows -- child of the scope the list was created in.
                 // Note this is almost a misnomer since the list doesn't have a scope of its own.
                 var rowScope = listScope.$new(false);
+                rowScope[repeatVarName] = getter(listScope)[0] || {}; // The rowTpl will be digested once -- want to make sure it has valid data for the first wasted digest.  Default to first row or {} if no rows
 
                 // Transclude the contents of the fast repeat.
                 // This function is called for every row. It reuses the rowTpl and scope for each row.
@@ -43,7 +45,6 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                         return rowTpl.clone();
                     }
 
-                    var getter = $parse(repeatListName); // getter(scope) should be the value of the list.
 
                     // Here is the main watch. Testing has shown that watching the stringified list can
                     // save roughly 500ms per digest in certain cases.
