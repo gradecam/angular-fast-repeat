@@ -121,22 +121,23 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                     var elIndex = $target.find('*').index(evt.target);
 
                     newScope[repeatVarName] = currentRowEls[rowId].item;
-                    transclude(newScope, function(clone, scope) {
-                        $target.replaceWith(clone);
-                        currentRowEls[rowId] = {
-                            compiled: true,
-                            el: clone
-                        };
+                    var clone = transclude(newScope, function(clone, scope) {
+                        scope.$$postDigest(function() {
+                            $target.replaceWith(clone);
 
-                        setTimeout(function() {
+                            currentRowEls[rowId] = {
+                                compiled: true,
+                                el: clone
+                            };
+
                             if(elIndex >= 0) {
                                 clone.find('*').eq(elIndex).trigger('click');
                             } else {
                                 clone.trigger('click');
                             }
-                        }, 0);
-
+                        });
                     });
+                    newScope.$digest();
                 });
             };
         },
