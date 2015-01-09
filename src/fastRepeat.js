@@ -1,5 +1,5 @@
 /* globals angular */
-angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse', function ($compile, $parse) {
+angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse', '$animate', function ($compile, $parse, $animate) {
     'use strict';
 
     var fastRepeatId = 0,
@@ -38,6 +38,7 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                 // Transclude the contents of the fast repeat.
                 // This function is called for every row. It reuses the rowTpl and scope for each row.
                 transclude(rowScope, function(rowTpl, scope) {
+                    $animate.enabled(false, rowTpl);
                     function render(item) {
                         scope[repeatVarName] = item;
                         scope.$digest();
