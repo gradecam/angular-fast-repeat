@@ -54,7 +54,7 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                 scope.$on('$destroy', function() {
                     tplContainer.detach();
                 });
-                tplContainer.css({position: 'absolute', top: '-10000px', left: '-1000px'});
+                tplContainer.css({position: 'absolute', top: '110%'});
                 var elParent = element.parents().filter(function() { return $(this).css('display') !== 'inline'; }).first();
                 tplContainer.width(elParent.width());
                 tplContainer.height(elParent.height());
