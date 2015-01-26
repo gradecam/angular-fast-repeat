@@ -162,12 +162,10 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                     var clone;
                     
                     clone = transclude(newScope, function(clone, scope) {
-                        $target.parent().append(clone);
-                        clone.css({position: 'relative', top: '-10000px'});
+                        tplContainer.append(clone);
                     });
                 
                     newScope.$$postDigest(function() {
-                        clone.css({position: '', top: ''});
                         $target.replaceWith(clone);
                         currentRowEls[rowId] = {
                             compiled: true,
