@@ -139,6 +139,7 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                     listScope.$$postDigest(function() {
                         tplContainer.width(elParent.width());
                         tplContainer.height(elParent.height());
+                        scope.$digest();
 
                         updateList(rowTpl, scope);
                         if (showProfilingInfo) {
