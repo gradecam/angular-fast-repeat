@@ -17,6 +17,14 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
         else { return (new Date()).getTime(); }
     }
 
+    function copyClasses(dst, src) {
+        var dstChildren = dst.find('*'), srcChildren = src.find('*');
+        for(var i=0; i< dstChildren.length; i++) {
+            $(dstChildren[i]).attr('class', $(srcChildren[i]).attr('class'));
+        }
+        dst.attr('class', src.attr('class'));
+    }
+
     return {
         restrict: 'A',
         transclude: 'element',
@@ -39,6 +47,21 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                 var rowTpl = transclude(scope, function(rowTpl, scope) {
                     $animate.enabled(false, rowTpl);
                 });
+
+                // Create an offscreen div for the template
+                var tplContainer = $("<div/>");
+                $('body').append(tplContainer);
+                scope.$on('$destroy', function() {
+                    tplContainer.detach();
+                });
+                tplContainer.css({position: 'absolute', top: '-10000px', left: '-1000px'});
+                var elParent = element.parents().filter(function() { return $(this).css('display') !== 'inline'; }).first();
+                tplContainer.width(elParent.width());
+                tplContainer.height(elParent.height());
+
+                tplContainer.append(rowTpl);
+
+                var updateList = function(rowTpl, scope) {
                     function render(item) {
                         scope[repeatVarName] = item;
                         scope.$digest();
@@ -47,95 +70,115 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                     }
 
 
-                    // Here is the main watch. Testing has shown that watching the stringified list can
-                    // save roughly 500ms per digest in certain cases.
-                    // JSONStripper is used to remove the $$fastRepeatId that we attach to the objects.
-                    listScope.$watch(function(scp){ return JSON.stringify(getter(scp), JSONStripper); }, function(list) {
-                        list = getter(listScope);
-
-                        if (showProfilingInfo) {
-                            t = getTime();
+                    var list = getter(scope);
+                    // Generate ids if necessary and arrange in a hash map
+                    var listByIds = {};
+                    angular.forEach(list, function(item) {
+                        if(!item.$$fastRepeatId) {
+                            if(item.id) { item.$$fastRepeatId = item.id; }
+                            else if(item._id) { item.$$fastRepeatId = item._id; }
+                            else { item.$$fastRepeatId = ++fastRepeatId; }
                         }
+                        listByIds[item.$$fastRepeatId] = item;
+                    });
 
-                        // Rendering is done in a postDigest so that we are outside of the main digest cycle.
-                        // This allows us to digest the individual row scope repeatedly without major hackery.
-                        listScope.$$postDigest(function() {
-
-                            // Generate ids if necessary and arrange in a hash map
-                            var listByIds = {};
-                            angular.forEach(list, function(item) {
-                                if(!item.$$fastRepeatId) {
-                                    item.$$fastRepeatId = ++fastRepeatId;
-                                }
-                                listByIds[item.$$fastRepeatId] = item;
-                            });
-
-                            // Delete removed rows
-                            angular.forEach(currentRowEls, function(row, id) {
-                                if(!listByIds[id]) {
-                                    row.el.detach();
-                                }
-                            });
-
-                            // Add/rearrange all rows
-                            var previousEl = element;
-                            angular.forEach(list, function(item) {
-                                var id = item.$$fastRepeatId;
-                                var row=currentRowEls[id];
-                                if(row) {
-                                    // We've already seen this one
-                                    if(!row.compiled && !angular.equals(row.copy, item)) {
-                                        // This item has not been compiled and it apparently has changed -- need to rerender
-                                        var newEl = render(item);
-                                        row.el.replaceWith(newEl);
-                                        row.el = newEl;
-                                        row.copy = angular.copy(item);
-                                    }
-                                } else {
-                                    // This must be a new node
-                                    row = {
-                                        copy: angular.copy(item),
-                                        item: item,
-                                        el: render(item)
-                                    };
-                                    currentRowEls[id] =  row;
-                                }
-                                previousEl.after(row.el.last());
-                                previousEl = row.el.last();
-                            });
-
-                            if (showProfilingInfo) {
-                                t = getTime() - t;
-                                console.log("Total time: ", t, "ms");
-                                console.log("time per row: ", t/list.length);
+                    // Delete removed rows
+                    angular.forEach(currentRowEls, function(row, id) {
+                        if(!listByIds[id]) {
+                            row.el.detach();
+                        }
+                    });
+                    // Add/rearrange all rows
+                    var previousEl = element;
+                    angular.forEach(list, function(item) {
+                        var id = item.$$fastRepeatId;
+                        var row=currentRowEls[id];
+                        if(row) {
+                            // We've already seen this one
+                            if(!row.compiled && !angular.equals(row.copy, item)) {
+                                // This item has not been compiled and it apparently has changed -- need to rerender
+                                var newEl = render(item);
+                                copyClasses(newEl, row.el);
+                                row.el.replaceWith(newEl);
+                                row.el = newEl;
+                                row.copy = angular.copy(item);
                             }
-                        });
+                        } else {
+                            // This must be a new node
+                            row = {
+                                copy: angular.copy(item),
+                                item: item,
+                                el: render(item)
+                            };
+                            currentRowEls[id] =  row;
+                        }
+                        previousEl.after(row.el.last());
+                        previousEl = row.el.last();
+                    });
+                    
+                };
 
-                    }, false);
+
+                // Here is the main watch. Testing has shown that watching the stringified list can
+                // save roughly 500ms per digest in certain cases.
+                // JSONStripper is used to remove the $$fastRepeatId that we attach to the objects.
+                var busy=false;
+                listScope.$watch(function(scp){ return JSON.stringify(getter(scp), JSONStripper); }, function(list) {
+                    tplContainer.width(elParent.width());
+                    tplContainer.height(elParent.height());
+
+                    if(busy) { return; }
+                    busy=true;
+
+                    if (showProfilingInfo) {
+                        t = getTime();
+                    }
+
+                    // Rendering is done in a postDigest so that we are outside of the main digest cycle.
+                    // This allows us to digest the individual row scope repeatedly without major hackery.
+                    listScope.$$postDigest(function() {
+                        tplContainer.width(elParent.width());
+                        tplContainer.height(elParent.height());
+
+                        updateList(rowTpl, scope);
+                        if (showProfilingInfo) {
+                            t = getTime() - t;
+                            console.log("Total time: ", t, "ms");
+                            console.log("time per row: ", t/list.length);
+                        }
+                        busy=false;
+                    },0);
+                }, false);
+
                 element.parent().on('click', '[fast-repeat-id]', function(evt) {
                     var $target = $(this);
                     var rowId = $target.attr('fast-repeat-id');
-                    var newScope = listScope.$new(false);
+                    var newScope = scope.$new(false);
                     // Find index of clicked dom element in list of all children element of the row.
                     // -1 would indicate the row itself was clicked.
                     var elIndex = $target.find('*').index(evt.target);
 
                     newScope[repeatVarName] = currentRowEls[rowId].item;
-                    var clone = transclude(newScope, function(clone, scope) {
-                        scope.$$postDigest(function() {
-                            $target.replaceWith(clone);
+                    var clone;
+                    
+                    clone = transclude(newScope, function(clone, scope) {
+                        $target.parent().append(clone);
+                        clone.css({position: 'relative', top: '-10000px'});
+                    });
+                
+                    newScope.$$postDigest(function() {
+                        clone.css({position: '', top: ''});
+                        $target.replaceWith(clone);
+                        currentRowEls[rowId] = {
+                            compiled: true,
+                            el: clone
+                        };
 
-                            currentRowEls[rowId] = {
-                                compiled: true,
-                                el: clone
-                            };
-
-                            if(elIndex >= 0) {
-                                clone.find('*').eq(elIndex).trigger('click');
-                            } else {
-                                clone.trigger('click');
-                            }
-                        });
+                        if(elIndex >= 0) {
+                            clone.find('*').eq(elIndex).trigger('click');
+                        } else {
+                            clone.trigger('click');
+                        }
                     });
                     newScope.$digest();
                 });
