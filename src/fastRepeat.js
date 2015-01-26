@@ -1,5 +1,5 @@
 /* globals angular */
-angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse', '$animate', function ($compile, $parse, $animate) {
+angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse', '$animate', '$rootScope', function ($compile, $parse, $animate, $rootScope) {
     'use strict';
 
     var fastRepeatId = 0,
@@ -19,9 +19,8 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
 
     return {
         restrict: 'A',
-        scope: false,
         transclude: 'element',
-        priority: 10000,
+        priority: 1000,
         compile: function(tElement, tAttrs) {
             return function link(listScope, element, attrs, ctrl, transclude) {
                 var repeatParts = attrs.fastRepeat.split(' in ');
@@ -30,15 +29,16 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                 var currentRowEls = {};
                 var t;
 
-                // Scope created for evaluating the rows -- child of the scope the list was created in.
-                // Note this is almost a misnomer since the list doesn't have a scope of its own.
-                var rowScope = listScope.$new(false);
-                rowScope[repeatVarName] = getter(listScope)[0] || {}; // The rowTpl will be digested once -- want to make sure it has valid data for the first wasted digest.  Default to first row or {} if no rows
+                // The rowTpl will be digested once -- want to make sure it has valid data for the first wasted digest.  Default to first row or {} if no rows
+                var scope = listScope.$new();
+                scope[repeatVarName] = getter(scope)[0] || {}; 
+
 
                 // Transclude the contents of the fast repeat.
                 // This function is called for every row. It reuses the rowTpl and scope for each row.
-                transclude(rowScope, function(rowTpl, scope) {
+                var rowTpl = transclude(scope, function(rowTpl, scope) {
                     $animate.enabled(false, rowTpl);
+                });
                     function render(item) {
                         scope[repeatVarName] = item;
                         scope.$digest();
@@ -112,7 +112,6 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                         });
 
                     }, false);
-                });
                 element.parent().on('click', '[fast-repeat-id]', function(evt) {
                     var $target = $(this);
                     var rowId = $target.attr('fast-repeat-id');
