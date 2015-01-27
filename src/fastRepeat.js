@@ -129,7 +129,7 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                             // We've already seen this one
                             if(!row.compiled && (forceUpdate || !angular.equals(row.copy, item))) {
                                 // This item has not been compiled and it apparently has changed -- need to rerender
-                                var newEl = rowEl;//render(item);
+                                var newEl = render(item);
                                 row.el.replaceWith(newEl);
                                 row.el = newEl;
                                 row.copy = angular.copy(item);
