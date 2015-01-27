@@ -17,13 +17,44 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
         else { return (new Date()).getTime(); }
     }
 
-    function copyClasses(dst, src) {
-        var dstChildren = dst.find('*'), srcChildren = src.find('*');
-        for(var i=0; i< dstChildren.length; i++) {
-            $(dstChildren[i]).attr('class', $(srcChildren[i]).attr('class'));
-        }
-        dst.attr('class', src.attr('class'));
-    }
+    var debounce = function(func, wait, immediate) { // Underscore JS debounce function
+        // Underscore.js 1.7.0
+        // http://underscorejs.org
+        // (c) 2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+        // Underscore may be freely distributed under the MIT license
+
+        var timeout, args, context, timestamp, result;
+
+        var now = Date.now || function() { return new Date().getTime(); };
+
+        var later = function() {
+          var last = now() - timestamp;
+
+          if (last < wait && last > 0) {
+            timeout = setTimeout(later, wait - last);
+          } else {
+            timeout = null;
+            if (!immediate) {
+              result = func.apply(context, args);
+              if (!timeout) { context = args = null; }
+            }
+          }
+        };
+
+        return function() {
+          context = this;
+          args = arguments;
+          timestamp = now();
+          var callNow = immediate && !timeout;
+          if (!timeout) { timeout = setTimeout(later, wait); }
+          if (callNow) {
+            result = func.apply(context, args);
+            context = args = null;
+          }
+
+          return result;
+        };
+      };
 
     return {
         restrict: 'A',
@@ -40,6 +71,7 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                 // The rowTpl will be digested once -- want to make sure it has valid data for the first wasted digest.  Default to first row or {} if no rows
                 var scope = listScope.$new();
                 scope[repeatVarName] = getter(scope)[0] || {}; 
+                scope.fastRepeatStatic = true; scope.fastRepeatDynamic = false;
 
 
                 // Transclude the contents of the fast repeat.
@@ -61,7 +93,7 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
 
                 tplContainer.append(rowTpl);
 
-                var updateList = function(rowTpl, scope) {
+                var updateList = function(rowTpl, scope, forceUpdate) {
                     function render(item) {
                         scope[repeatVarName] = item;
                         scope.$digest();
@@ -95,10 +127,9 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                         var row=currentRowEls[id];
                         if(row) {
                             // We've already seen this one
-                            if(!row.compiled && !angular.equals(row.copy, item)) {
+                            if(!row.compiled && (forceUpdate || !angular.equals(row.copy, item))) {
                                 // This item has not been compiled and it apparently has changed -- need to rerender
-                                var newEl = render(item);
-                                copyClasses(newEl, row.el);
+                                var newEl = rowEl;//render(item);
                                 row.el.replaceWith(newEl);
                                 row.el = newEl;
                                 row.copy = angular.copy(item);
@@ -148,7 +179,7 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                             console.log("time per row: ", t/list.length);
                         }
                         busy=false;
-                    },0);
+                    });
                 }, false);
 
                 element.parent().on('click', '[fast-repeat-id]', function(evt) {
@@ -160,6 +191,7 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                     var elIndex = $target.find('*').index(evt.target);
 
                     newScope[repeatVarName] = currentRowEls[rowId].item;
+                    newScope.fastRepeatStatic = false; newScope.fastRepeatDynamic = true;
                     var clone;
                     
                     clone = transclude(newScope, function(clone, scope) {
@@ -181,6 +213,22 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                     });
                     newScope.$digest();
                 });
+
+                // Handle resizes
+                //
+                var onResize = debounce(function() {
+                    tplContainer.width(elParent.width());
+                    tplContainer.height(elParent.height());
+                    scope.$digest();
+                    
+                    if(busy) { return; }
+                    updateList(rowTpl, scope, true);
+                }, 500);
+
+                var jqWindow = $(window);
+                jqWindow.on('resize', onResize);
+                element.on('$destroy', function() { jqWindow.off('resize', onResize); });
+
             };
         },
     };
