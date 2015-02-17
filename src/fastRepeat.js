@@ -216,14 +216,10 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
 
                 // Handle resizes
                 //
-                var onResize = debounce(function() {
+                var onResize = function() {
                     tplContainer.width(elParent.width());
                     tplContainer.height(elParent.height());
-                    scope.$digest();
-                    
-                    if(busy) { return; }
-                    updateList(rowTpl, scope, true);
-                }, 500);
+                };
 
                 var jqWindow = $(window);
                 jqWindow.on('resize', onResize);
