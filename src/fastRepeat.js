@@ -143,6 +143,18 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                     });
                 }, false);
 
+                if(attrs.fastRepeatWatch) {
+                    listScope.$watch(attrs.fastRepeatWatch, function() {
+                        listScope.$$postDigest(function() {
+                            tplContainer.width(elParent.width());
+                            tplContainer.height(elParent.height());
+                            scope.$digest();
+                            updateList(rowTpl, scope, true);
+                        });
+                        
+                    });
+                }
+
                 element.parent().on('click', '[fast-repeat-id]', function(evt) {
                     var $target = $(this);
                     var rowId = $target.attr('fast-repeat-id');
