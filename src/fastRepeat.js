@@ -157,6 +157,11 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
 
                 element.parent().on('click', '[fast-repeat-id]', function(evt) {
                     var $target = $(this);
+                    if($target.parents().filter('[fast-repeat-id]').length) {
+                        return; // This event wasn't meant for us
+                    }
+                    evt.stopPropagation();
+
                     var rowId = $target.attr('fast-repeat-id');
                     var newScope = scope.$new(false);
                     // Find index of clicked dom element in list of all children element of the row.
@@ -178,11 +183,13 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                             el: clone
                         };
 
-                        if(elIndex >= 0) {
-                            clone.find('*').eq(elIndex).trigger('click');
-                        } else {
-                            clone.trigger('click');
-                        }
+                        setTimeout(function() {
+                            if(elIndex >= 0) {
+                                clone.find('*').eq(elIndex).trigger('click');
+                            } else {
+                                clone.trigger('click');
+                            }
+                        }, 0);
                     });
                     newScope.$digest();
                 });
