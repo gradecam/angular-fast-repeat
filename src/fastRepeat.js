@@ -31,7 +31,7 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
 
                 // The rowTpl will be digested once -- want to make sure it has valid data for the first wasted digest.  Default to first row or {} if no rows
                 var scope = listScope.$new();
-                scope[repeatVarName] = getter(scope)[0] || {}; 
+                scope[repeatVarName] = getter(scope)[0] || {};
                 scope.fastRepeatStatic = true; scope.fastRepeatDynamic = false;
 
 
@@ -107,7 +107,7 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                         previousEl.after(row.el.last());
                         previousEl = row.el.last();
                     });
-                    
+
                 };
 
 
@@ -143,17 +143,18 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                     });
                 }, false);
 
-                if(attrs.fastRepeatWatch) {
-                    listScope.$watch(attrs.fastRepeatWatch, function() {
-                        listScope.$$postDigest(function() {
-                            tplContainer.width(elParent.width());
-                            tplContainer.height(elParent.height());
-                            scope.$digest();
-                            updateList(rowTpl, scope, true);
-                        });
-                        
+                function renderRows() {
+                    listScope.$$postDigest(function() {
+                        tplContainer.width(elParent.width());
+                        tplContainer.height(elParent.height());
+                        scope.$digest();
+                        updateList(rowTpl, scope, true);
                     });
                 }
+                if(attrs.fastRepeatWatch) {
+                    listScope.$watch(attrs.fastRepeatWatch, renderRows);
+                }
+                listScope.$on('fastRepeatForceRedraw', renderRows);
 
                 element.parent().on('click', '[fast-repeat-id]', function(evt) {
                     var $target = $(this);
@@ -171,11 +172,11 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                     newScope[repeatVarName] = currentRowEls[rowId].item;
                     newScope.fastRepeatStatic = false; newScope.fastRepeatDynamic = true;
                     var clone;
-                    
+
                     clone = transclude(newScope, function(clone, scope) {
                         tplContainer.append(clone);
                     });
-                
+
                     newScope.$$postDigest(function() {
                         $target.replaceWith(clone);
                         currentRowEls[rowId] = {
