@@ -94,6 +94,8 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                                 row.el.replaceWith(newEl);
                                 row.el = newEl;
                                 row.copy = angular.copy(item);
+                                row.compiled = false;
+                                row.item = item;
                             }
                         } else {
                             // This must be a new node
