@@ -88,7 +88,7 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                         var row=currentRowEls[id];
                         if(row) {
                             // We've already seen this one
-                            if(!row.compiled && (forceUpdate || !angular.equals(row.copy, item))) {
+                            if((!row.compiled && (forceUpdate || !angular.equals(row.copy, item))) || (row.compiled && row.item!==item)) {
                                 // This item has not been compiled and it apparently has changed -- need to rerender
                                 var newEl = render(item);
                                 row.el.replaceWith(newEl);
@@ -169,7 +169,7 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                     // -1 would indicate the row itself was clicked.
                     var elIndex = $target.find('*').index(evt.target);
 
-                    newScope[repeatVarName] = currentRowEls[rowId].item;
+                    var item = newScope[repeatVarName] = currentRowEls[rowId].item;
                     newScope.fastRepeatStatic = false; newScope.fastRepeatDynamic = true;
                     var clone;
 
@@ -181,7 +181,8 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                         $target.replaceWith(clone);
                         currentRowEls[rowId] = {
                             compiled: true,
-                            el: clone
+                            el: clone,
+                            item: item
                         };
 
                         setTimeout(function() {
