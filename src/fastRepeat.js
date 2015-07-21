@@ -26,6 +26,7 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                 var repeatParts = attrs.fastRepeat.split(' in ');
                 var repeatListName = repeatParts[1], repeatVarName = repeatParts[0];
                 var getter = $parse(repeatListName); // getter(scope) should be the value of the list.
+                var disableOpts = $parse(attrs.fastRepeatDisableOpts)(listScope);
                 var currentRowEls = {};
                 var t;
 
@@ -86,6 +87,8 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                     angular.forEach(list, function(item) {
                         var id = item.$$fastRepeatId;
                         var row=currentRowEls[id];
+
+
                         if(row) {
                             // We've already seen this one
                             if((!row.compiled && (forceUpdate || !angular.equals(row.copy, item))) || (row.compiled && row.item!==item)) {
@@ -99,11 +102,28 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                             }
                         } else {
                             // This must be a new node
-                            row = {
-                                copy: angular.copy(item),
-                                item: item,
-                                el: render(item)
-                            };
+
+                            if(!disableOpts) {
+                                row = {
+                                    copy: angular.copy(item),
+                                    item: item,
+                                    el: render(item)
+                                };
+                            } else {
+                                // Optimizations are disabled
+                                row = {
+                                    copy: angular.copy(item),
+                                    item: item,
+                                    el: $('<div/>'),
+                                    compiled: true
+                                };
+                                
+                                renderUnoptimized(item, function(newEl) {
+                                    row.el.replaceWith(newEl);
+                                    row.el=newEl;
+                                });
+                            }
+
                             currentRowEls[id] =  row;
                         }
                         previousEl.after(row.el.last());
@@ -158,6 +178,23 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                 }
                 listScope.$on('fastRepeatForceRedraw', renderRows);
 
+                function renderUnoptimized(item, cb) {
+                    var newScope = scope.$new(false);
+
+                    newScope[repeatVarName] = item;
+                    newScope.fastRepeatStatic = false; newScope.fastRepeatDynamic = true;
+                    var clone = transclude(newScope, function(clone) {
+                        tplContainer.append(clone);
+                    });
+            
+                    newScope.$$postDigest(function() {
+                        cb(clone);
+                    });
+
+                
+                    return newScope;
+                }
+
                 element.parent().on('click', '[fast-repeat-id]', function(evt) {
                     var $target = $(this);
                     if($target.parents().filter('[fast-repeat-id]').length) {
@@ -166,21 +203,15 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                     evt.stopPropagation();
 
                     var rowId = $target.attr('fast-repeat-id');
-                    var newScope = scope.$new(false);
+                    var item = currentRowEls[rowId].item;
+
+
                     // Find index of clicked dom element in list of all children element of the row.
                     // -1 would indicate the row itself was clicked.
                     var elIndex = $target.find('*').index(evt.target);
-
-                    var item = newScope[repeatVarName] = currentRowEls[rowId].item;
-                    newScope.fastRepeatStatic = false; newScope.fastRepeatDynamic = true;
-                    var clone;
-
-                    clone = transclude(newScope, function(clone, scope) {
-                        tplContainer.append(clone);
-                    });
-
-                    newScope.$$postDigest(function() {
+                    var newScope = renderUnoptimized(item, function(clone) {
                         $target.replaceWith(clone);
+
                         currentRowEls[rowId] = {
                             compiled: true,
                             el: clone,
@@ -195,6 +226,7 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                             }
                         }, 0);
                     });
+
                     newScope.$digest();
                 });
 
