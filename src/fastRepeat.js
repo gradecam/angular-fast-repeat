@@ -52,6 +52,7 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                 var elParent = element.parents().filter(function() { return $(this).css('display') !== 'inline'; }).first();
                 tplContainer.width(elParent.width());
                 tplContainer.height(elParent.height());
+                tplContainer.css({visibility: 'hidden'});
 
                 tplContainer.append(rowTpl);
 
