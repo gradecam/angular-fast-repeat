@@ -192,7 +192,8 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                         cb(clone);
                     });
 
-                
+                    newScope.$digest();
+
                     return newScope;
                 }
 
