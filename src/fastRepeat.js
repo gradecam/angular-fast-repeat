@@ -48,10 +48,9 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                 scope.$on('$destroy', function() {
                     tplContainer.detach();
                 });
-                tplContainer.css({position: 'absolute', top: '110%'});
+                tplContainer.css({position: 'absolute', top: '-100%'});
                 var elParent = element.parents().filter(function() { return $(this).css('display') !== 'inline'; }).first();
                 tplContainer.width(elParent.width());
-                tplContainer.height(elParent.height());
                 tplContainer.css({visibility: 'hidden'});
 
                 tplContainer.append(rowTpl);
@@ -140,7 +139,6 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                 var busy=false;
                 listScope.$watch(function(scp){ return JSON.stringify(getter(scp), JSONStripper); }, function(list) {
                     tplContainer.width(elParent.width());
-                    tplContainer.height(elParent.height());
 
                     if(busy) { return; }
                     busy=true;
@@ -153,7 +151,6 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                     // This allows us to digest the individual row scope repeatedly without major hackery.
                     listScope.$$postDigest(function() {
                         tplContainer.width(elParent.width());
-                        tplContainer.height(elParent.height());
                         scope.$digest();
 
                         updateList(rowTpl, scope);
@@ -169,7 +166,6 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                 function renderRows() {
                     listScope.$$postDigest(function() {
                         tplContainer.width(elParent.width());
-                        tplContainer.height(elParent.height());
                         scope.$digest();
                         updateList(rowTpl, scope, true);
                     });
@@ -236,7 +232,6 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                 //
                 var onResize = function() {
                     tplContainer.width(elParent.width());
-                    tplContainer.height(elParent.height());
                 };
 
                 var jqWindow = $(window);
