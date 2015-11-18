@@ -60,7 +60,7 @@ module.exports = function(grunt) {
             ]);
         };
     }
-    grunt.registerTask('bump', ['bump:patch']);
+    grunt.registerTask('bump', ['patch']);
     grunt.registerTask('major', bump('major'));
     grunt.registerTask('minor', bump('minor'));
     grunt.registerTask('patch', bump('patch'));
