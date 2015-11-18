@@ -3,7 +3,8 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
     'use strict';
 
     var fastRepeatId = 0,
-        showProfilingInfo = false;
+        showProfilingInfo = false,
+        isGteAngular14 = /^(\d+\.\d+)\./.exec(angular.version.full)[1] > 1.3;
 
     // JSON.stringify replacer function which removes any keys that start with $$.
     // This prevents unnecessary updates when we watch a JSON stringified value.
@@ -39,7 +40,11 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                 // Transclude the contents of the fast repeat.
                 // This function is called for every row. It reuses the rowTpl and scope for each row.
                 var rowTpl = transclude(scope, function(rowTpl, scope) {
-                    $animate.enabled(false, rowTpl);
+                    if (isGteAngular14) {
+                        $animate.enabled(rowTpl, false);
+                    } else {
+                        $animate.enabled(false, rowTpl);
+                    }
                 });
 
                 // Create an offscreen div for the template
