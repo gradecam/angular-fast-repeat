@@ -1,5 +1,5 @@
 /* globals angular */
-angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse', '$animate', '$rootScope', function ($compile, $parse, $animate, $rootScope) {
+angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse', '$animate', function ($compile, $parse, $animate) {
     'use strict';
 
     var fastRepeatId = 0,
@@ -122,7 +122,7 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                                     el: $('<div/>'),
                                     compiled: true
                                 };
-                                
+
                                 renderUnoptimized(item, function(newEl) {
                                     row.el.replaceWith(newEl);
                                     row.el=newEl;
@@ -188,7 +188,7 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                     var clone = transclude(newScope, function(clone) {
                         tplContainer.append(clone);
                     });
-            
+
                     newScope.$$postDigest(function() {
                         cb(clone);
                     });
