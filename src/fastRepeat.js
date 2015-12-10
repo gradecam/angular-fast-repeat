@@ -248,7 +248,7 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                 jqWindow.on('resize', onResize);
                 scope.$on('$destroy', function() { 
                     jqWindow.off('resize', onResize);
-                    element.parent().off('click', '[fast-repeat-id]');
+                    element.parent().off('click', '[fast-repeat-id]', parentClickHandler);
                 });
             };
         },
