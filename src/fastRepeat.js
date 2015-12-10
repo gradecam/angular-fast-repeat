@@ -1,6 +1,7 @@
 /* globals angular */
 angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse', '$animate', function ($compile, $parse, $animate) {
     'use strict';
+    var $ = angular.element;
 
     var fastRepeatId = 0,
         showProfilingInfo = false,
@@ -51,7 +52,8 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                 var tplContainer = $("<div/>");
                 $('body').append(tplContainer);
                 scope.$on('$destroy', function() {
-                    tplContainer.detach();
+                    tplContainer.remove();
+                    rowTpl.remove();
                 });
                 tplContainer.css({position: 'absolute', top: '-100%'});
                 var elParent = element.parents().filter(function() { return $(this).css('display') !== 'inline'; }).first();
@@ -198,7 +200,7 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                     return newScope;
                 }
 
-                element.parent().on('click', '[fast-repeat-id]', function(evt) {
+                var parentClickHandler = function parentClickHandler(evt) {
                     var $target = $(this);
                     if($target.parents().filter('[fast-repeat-id]').length) {
                         return; // This event wasn't meant for us
@@ -231,8 +233,11 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                     });
 
                     newScope.$digest();
-                });
+                };
 
+
+                element.parent().on('click', '[fast-repeat-id]',parentClickHandler);
+                
                 // Handle resizes
                 //
                 var onResize = function() {
@@ -241,8 +246,10 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
 
                 var jqWindow = $(window);
                 jqWindow.on('resize', onResize);
-                element.on('$destroy', function() { jqWindow.off('resize', onResize); });
-
+                scope.$on('$destroy', function() { 
+                    jqWindow.off('resize', onResize);
+                    element.parent().off('click', '[fast-repeat-id]', parentClickHandler);
+                });
             };
         },
     };
