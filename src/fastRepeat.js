@@ -178,7 +178,7 @@ angular.module('gc.fastRepeat', []).directive('fastRepeat', ['$compile', '$parse
                     });
                 }
                 if(attrs.fastRepeatWatch) {
-                    listScope.$watch(attrs.fastRepeatWatch, renderRows);
+                    listScope.$watch(attrs.fastRepeatWatch, renderRows, true);
                 }
                 listScope.$on('fastRepeatForceRedraw', renderRows);
 
