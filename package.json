@@ -1,6 +1,6 @@
 {
   "name": "angular-fast-repeat",
-  "version": "0.0.20",
+  "version": "0.0.21",
   "description": "Fast ng-repeat replacement",
   "main": "./src/fastRepeat.js",
   "authors": [
